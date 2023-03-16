@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Quiz Game</string>
+    <string name="score">Score: %d</string>
+    <string name="question_count">%d of 10 questions</string>
+    <string name="congratulations">Congratulations!</string>
+    <string name="you_scored">"You scored: %d"</string>
+    <string name="exit">Exit</string>
+    <string name="play_again">Play Again</string>
+</resources>
