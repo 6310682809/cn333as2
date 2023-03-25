@@ -18,14 +18,7 @@ import com.example.quizgametest.GameViewModel
 
 @Composable
 fun GameScreen(viewModel: GameViewModel = viewModel()) {
-    var currentQuestion by remember { mutableStateOf(viewModel.getNextQuestion()) }
-    var selectedAnswer by remember { mutableStateOf("") }
-    var result by remember { mutableStateOf("") }
     val quizUiState by viewModel.uiState.collectAsState()
-
-    if (currentQuestion == null) {
-        currentQuestion = viewModel.getNextQuestion()
-    }
 
     Column(
         modifier = Modifier
@@ -37,13 +30,11 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
             questionCount = quizUiState.currentQuestionCount,
             score = quizUiState.score
         )
-        currentQuestion?.let {
-            GameLayout(
-                currentQuestion = it,
-            )
-        }
+        GameLayout(
+            currentQuestion = quizUiState.currentQuestion,
+        )
 
-        currentQuestion!!.options.forEach { option ->
+        quizUiState.currentQuestion.options.forEach { option ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -51,8 +42,8 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
-                    selected = selectedAnswer == option,
-                    onClick = { selectedAnswer = option },
+                    selected = quizUiState.selectedAnswer == option,
+                    onClick = { viewModel.setselectedAnswer(option) },
                     colors = RadioButtonDefaults.colors(
                         selectedColor = MaterialTheme.colors.primary
                     )
@@ -65,44 +56,24 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
             }
         }
 
-        if (result.isNotBlank()) {
+        if (quizUiState.result.isNotBlank()) {
             Text(
-                text = result,
+                text = quizUiState.result,
                 style = MaterialTheme.typography.h6,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
         }
 
         if (quizUiState.isGameOver ) {
-
             FinalScoreDialog(
                 score = quizUiState.score,
                 onPlayAgain = {
                     viewModel.reset()
-                    currentQuestion = viewModel.getNextQuestion()
-                    selectedAnswer = ""
-                    result = ""
                 }
             )
-
         } else {
             Button(
-                onClick = {
-                    if(selectedAnswer == ""){
-                        result = "Please select an option."
-                    }
-                    else{
-                        val isCorrect = viewModel.checkAnswer(selectedAnswer)
-                        result = if (isCorrect) {
-                            "Correct!"
-                        } else {
-                            "Incorrect! The correct answer was ${currentQuestion!!.correctAnswer}."
-                        }
-                        currentQuestion = viewModel.getNextQuestion()
-                        selectedAnswer = ""
-                    }
-
-                },
+                onClick = { viewModel.checkselectedAnswer() },
                 modifier = Modifier.padding(top = 16.dp)
             ) {
                 Text(text = "Submit Answer")
@@ -146,15 +117,14 @@ fun GameLayout(
             style = MaterialTheme.typography.h4,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-
         Text(
-            text = currentQuestion!!.question,
+            text = currentQuestion.question,
             style = MaterialTheme.typography.h5,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-
     }
 }
+
 @Composable
 private fun FinalScoreDialog(
     score: Int,

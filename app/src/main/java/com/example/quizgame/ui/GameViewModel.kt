@@ -10,14 +10,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class GameViewModel : ViewModel() {
-
     private var questionIndex = 0
     private val usedQuestions = mutableListOf<Int>()
 
-    private val _uiState = MutableStateFlow(GameUiState())
+    private val _uiState = MutableStateFlow(GameUiState(
+        currentQuestion = getNextQuestion(),
+    ))
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
-    fun getNextQuestion(): Question? {
+    fun getNextQuestion(): Question {
         if (usedQuestions.size == questions.size) {
             return questions[questionIndex]
         }
@@ -33,7 +34,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun checkAnswer(answer: String): Boolean {
-        val correct = answer == questions[questionIndex].correctAnswer
+        val correct = answer == _uiState.value.currentQuestion.correctAnswer
         if (usedQuestions.size == 10) {
             _uiState.update { currentState ->
                 currentState.copy(
@@ -58,9 +59,47 @@ class GameViewModel : ViewModel() {
         return correct
     }
 
+    fun checkselectedAnswer() {
+        if(_uiState.value.selectedAnswer == ""){
+            _uiState.update { currentState ->
+                currentState.copy(
+                    result = "Please select an option."
+                )
+            }
+        }
+        else{
+            val isCorrect = checkAnswer(_uiState.value.selectedAnswer)
+            val result = if (isCorrect) {
+                "Correct!"
+            } else {
+                "Incorrect! The correct answer was ${_uiState.value.currentQuestion.correctAnswer}."
+            }
+            _uiState.update { currentState ->
+                currentState.copy(
+                    result = result,
+                    selectedAnswer = "",
+                    currentQuestion = getNextQuestion()
+                )
+            }
+        }
+    }
+
+    fun setselectedAnswer(option: String) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                selectedAnswer = option
+            )
+        }
+    }
+
     fun reset() {
         questionIndex = 0
         usedQuestions.clear()
-        _uiState.value = GameUiState(isGameOver = false)
+        _uiState.value = GameUiState(
+            isGameOver = false,
+            currentQuestion = getNextQuestion(),
+            selectedAnswer = "",
+            result = ""
+        )
     }
 }
